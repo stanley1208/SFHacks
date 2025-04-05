@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>QuitBet - Transactions</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(to right, #f3e5f5, #ede7f6);
+            margin: 0;
+            padding: 2rem;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background-color: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+        }
+
+        h2 {
+            text-align: center;
+            color: #7e57c2;
+            margin-bottom: 2rem;
+        }
+
+        h3 {
+            margin-top: 2rem;
+            color: #6a42b2;
+            border-bottom: 2px solid #e1bee7;
+            padding-bottom: 0.3rem;
+        }
+
+        p {
+            font-size: 1rem;
+            background-color: #f3e5f5;
+            padding: 1rem;
+            border-radius: 10px;
+            margin-top: 0.5rem;
+        }
+
+        ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        li {
+            background-color: #f9f6fc;
+            margin: 0.5rem 0;
+            padding: 0.8rem 1rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        li strong {
+            color: #c2185b;
+        }
+
+        .no-transactions {
+            color: #4caf50;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>🔍 Transactions for {{ email }}</h2>
+
+        <h3>🧠 Gemini Insight</h3>
+        <p>{{ insight }}</p>
+
+        <h3>⚠️ Gambling Transactions</h3>
+        <ul>
+            {% for txn in gambling %}
+                <li><strong>{{ txn.date }} - {{ txn.name }} - ${{ txn.amount }}</strong></li>
+            {% else %}
+                <li class="no-transactions">✅ No gambling-related transactions found.</li>
+            {% endfor %}
+        </ul>
+
+        <h3>📋 All Recent Transactions</h3>
+        <ul>
+            {% for txn in transactions %}
+                <li>{{ txn.date }} - {{ txn.name }} - ${{ txn.amount }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+</body>
+</html>
+
+
+
