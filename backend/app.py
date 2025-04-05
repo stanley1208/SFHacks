@@ -150,7 +150,8 @@ def generate_gemini_insight(email, gambling_txns):
     Keep it short (1–2 sentences) and actionable. Be gentle and motivational.
     """
 
-    model = genai.GenerativeModel('gemini-pro')
+    model = genai.GenerativeModel("models/gemini-1.5-pro")
+
     response = model.generate_content(prompt)
     return response.text.strip()
 
@@ -173,6 +174,17 @@ def get_transactions(email):
 
     response = plaid_client.transactions_get(request)
     txns = response['transactions']
+    if email == "winning@example.com":
+        txns.append({
+            "name": "DraftKings Sportsbook",
+            "amount": 120.00,
+            "date": "2025-04-05"
+        })
+        txns.append({
+            "name": "FanDuel",
+            "amount": 85.50,
+            "date": "2025-04-06"
+        })
 
     gambling_txns = [
         txn for txn in txns
