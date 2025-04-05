@@ -211,17 +211,19 @@ def get_transactions(email):
 
     response = plaid_client.transactions_get(request)
     txns = response['transactions']
-    if email == "winning@example.com":
-        txns.append({
-            "name": "DraftKings Sportsbook",
-            "amount": 120.00,
-            "date": "2025-04-05"
-        })
-        txns.append({
-            "name": "FanDuel",
-            "amount": 85.50,
-            "date": "2025-04-06"
-        })
+    # if email == "winning@example.com":
+    txns.append({
+        "name": "DraftKings Sportsbook",
+        "amount": 120.00,
+        "date": "2025-04-05",
+        "winnings" : 100
+    })
+    txns.append({
+        "name": "FanDuel",
+        "amount": 85.50,
+        "date": "2025-04-06",
+        "winnings" : -85.50
+    })
 
     gambling_txns = [
         txn for txn in txns

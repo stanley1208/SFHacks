@@ -1,5 +1,21 @@
 <!DOCTYPE html>
 <html>
+<style>
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-bottom: 20px;
+  }
+  th, td {
+    border: 1px solid #888;
+    padding: 8px;
+    text-align: left;
+  }
+  th {
+    background-color: #f2f2f2;
+  }
+</style>
+
 <head>
     <title>QuitBet - Transactions</title>
 </head>
@@ -11,15 +27,20 @@
 
     <h3>⚠️ Gambling Transactions</h3>
     <ul>
+        <table>
+        <tr><th>Date</th> <th>Service</th> <th>amount bet</th> <th>gain/loss</th></tr>
         {% for txn in gambling %}
-            <li><strong>{{ txn.date }} - {{ txn.name }} - ${{ txn.amount }}</strong></li>
+            <tr><td>{{ txn.date }}</td> <td>{{ txn.name }} </td> <td>- ${{ txn.amount }}</td> <td>{{txn.winnings}} </td> </tr>
         {% else %}
             <li>✅ No gambling-related transactions found.</li>
         {% endfor %}
+        </table>
+
     </ul>
 
     <h3>📋 All Recent Transactions</h3>
     <ul>
+        <tr><th>Service</th> <th>amount bet</th> <th>gain/loss</th></tr>
         {% for txn in transactions %}
             <li>{{ txn.date }} - {{ txn.name }} - ${{ txn.amount }}</li>
         {% endfor %}

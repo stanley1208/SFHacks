@@ -10,7 +10,14 @@
   },
   "stanley.mei08@gmail.com": {
     "password": "Stanley1208@",
-    "access_token": "access-sandbox-102704e0-de00-4ea3-bae5-7b291dc1a963"
+    "access_token": "access-sandbox-85b845f2-06e4-49d9-b43a-565f266e8323",
+    "daily_spend_estimate": 98,
+    "progress": {
+      "last_gambling_date": "2025-04-05",
+      "days_clean": 0,
+      "money_saved": 0.0,
+      "last_checkin_date": "2025-04-05"
+    }
   },
   "stanley.mei08@yahoo.com.tw": {
     "password": "Stanley1208@",
@@ -35,11 +42,11 @@
   },
   "StanleyNoAim@gmail.com": {
     "password": "Stanley1208@",
-    "access_token": "access-sandbox-a93ba1b6-3854-4174-8ed0-c8ba50bdf768",
+    "access_token": "access-sandbox-cd1d6b4c-cabb-450d-9482-eb5d87ec4155",
     "progress": {
-      "last_gambling_date": null,
-      "days_clean": 1,
-      "money_saved": 40,
+      "last_gambling_date": "2025-04-05",
+      "days_clean": 0,
+      "money_saved": 0.0,
       "last_checkin_date": "2025-04-05"
     },
     "daily_spend_estimate": 55
