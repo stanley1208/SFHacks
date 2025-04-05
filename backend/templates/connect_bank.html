@@ -7,6 +7,33 @@
 <body>
     <h2>🔗 Connect Your Bank</h2>
     <button id="link-button">Connect Bank</button>
+    <script>
+  const linkToken = "{{ link_token }}";
+  const email = "{{ email }}";
+
+  const handler = Plaid.create({
+    token: linkToken,
+    onSuccess: function(public_token, metadata) {
+      fetch('/exchange_token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ public_token, email })
+      })
+      .then(res => res.json())
+      .then(data => {
+        alert(data.message);
+        // ✅ Redirect to the transactions page
+        window.location.href = `/transactions/${email}`;
+      });
+    }
+  });
+
+  function openLink() {
+    handler.open();
+  }
+</script>
 
     <script>
         const linkHandler = Plaid.create({
@@ -21,7 +48,10 @@
                     body: JSON.stringify({ public_token: public_token, email: "{{ email }}" })
                 })
                 .then(res => res.json())
-                .then(data => alert(data.message));
+                .then(data => {alert(data.message);
+                window.location.href = `/transactions/${email}`;
+            });
+
             },
         });
 
