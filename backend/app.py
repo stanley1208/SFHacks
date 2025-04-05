@@ -130,30 +130,46 @@ def exchange_token():
     return jsonify({'message': '✅ Bank connected successfully!'})
 
 
-def generate_gemini_insight(email, gambling_txns):
-    if not gambling_txns:
-        return f"✅ Great job, {email.split('@')[0]} — no gambling-related transactions found recently!"
+def generate_gemini_insight(email, txns, gambling_txns):
+    if not txns:
+        return "No recent transactions found."
 
-    # Construct input for Gemini
-    total = sum(txn['amount'] for txn in gambling_txns)
-    count = len(gambling_txns)
-    summary_lines = [f"- {txn['date']}: {txn['name']} (${txn['amount']})" for txn in gambling_txns]
+    if gambling_txns:
+        prompt = f"""
+        You're QuitBet, an AI trained to help people quit gambling.
+        
+        User: {email}
+        Here are recent transactions:
+        {txns}
+        
+        These appear to be gambling-related:
+        {gambling_txns}
+        
+        Generate a 1–2 sentence helpful reflection or alert, like:
+        “You bet $300 this week, mostly after 10 PM. Let’s talk about setting limits.”
+        
+        Be supportive, helpful, and motivational.
+        """
+    else:
+        prompt = f"""
+        You're QuitBet, an AI trained to support people trying to quit gambling.
+        
+        User: {email}
+        Here are recent transactions:
+        {txns}
+        
+        No gambling activity was detected.
+        
+        Generate a short encouraging message like:
+        “Great job staying on track! You’ve made 7 healthy choices this week.”
+        
+        Your tone should be warm, motivating, and a little personalized.
+        """
 
-    prompt = f"""
-    The following is a list of recent gambling-related transactions for a user:
-    Total: {count} transactions
-    Amount spent: ${total:.2f}
-    Dates & Merchants:
-    {' '.join(summary_lines)}
-
-    As an AI assistant for gambling recovery, generate a supportive, non-judgmental insight or reflection based on these transactions.
-    Keep it short (1–2 sentences) and actionable. Be gentle and motivational.
-    """
-
-    model = genai.GenerativeModel("models/gemini-1.5-pro")
-
+    model = genai.GenerativeModel("models/gemini-1.5-pro")  # or "gemini-1.5-flash"
     response = model.generate_content(prompt)
-    return response.text.strip()
+    return response.text
+
 
 
 @app.route('/transactions/<email>')
@@ -191,7 +207,7 @@ def get_transactions(email):
         if any(kw in txn['name'].lower() for kw in GAMBLING_KEYWORDS)
     ]
 
-    ai_insight = generate_gemini_insight(email, gambling_txns)
+    ai_insight = generate_gemini_insight(email, txns, gambling_txns)
 
     return render_template("transactions.html", transactions=txns, gambling=gambling_txns, email=email, insight=ai_insight)
 
