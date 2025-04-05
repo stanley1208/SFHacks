@@ -24,11 +24,24 @@
             <li>{{ txn.date }} - {{ txn.name }} - ${{ txn.amount }}</li>
         {% endfor %}
     </ul>
+
+
+    <h3>📈 Your Progress</h3>
+    <ul>
+      <li>🔥 Days clean: {{ days_clean }}</li>
+      <li>🧮 Daily Estimated Spend: ${{ daily_spend_estimate }}</li>
+
+    </ul>
+
+    {% if daily_checkin %}
+      <h3>📬 Daily Check-in</h3>
+      <p>{{ daily_checkin }}</p>
+    {% endif %}
+
     <p>
       <a href="/login" style="padding: 8px 16px; background: #4285F4; color: white; text-decoration: none; border-radius: 8px;">
         🔙 Back to Main Page
       </a>
     </p>
-
 </body>
 </html>

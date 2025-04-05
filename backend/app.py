@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from plaid.model.transactions_get_request import TransactionsGetRequest
 from plaid.model.transactions_get_request_options import TransactionsGetRequestOptions
 from datetime import date
-
+import random
 
 # Plaid v8 imports
 from plaid.api import plaid_api
@@ -172,6 +172,27 @@ def generate_gemini_insight(email, txns, gambling_txns):
 
 
 
+def generate_gemini_checkin(email, days_clean):
+    prompt = f"""
+    You're QuitBet, an AI coach helping users quit gambling.
+    
+    This user is on day {days_clean} of their clean streak.
+    
+    Write a short, friendly, motivational daily check-in message. Be personal, positive, and ask a reflective question.
+    
+    Examples:
+    - "It's Day 3 clean, Stanley! What's one thing that helped you resist yesterday?"
+    - "4 days strong — incredible. Want to reflect on your proudest moment this week?"
+    
+    Limit to 1–2 sentences.
+    """
+
+    model = genai.GenerativeModel("models/gemini-1.5-pro")
+    response = model.generate_content(prompt)
+    return response.text
+
+
+
 @app.route('/transactions/<email>')
 def get_transactions(email):
     access_token = users.get(email, {}).get('access_token')
@@ -207,9 +228,69 @@ def get_transactions(email):
         if any(kw in txn['name'].lower() for kw in GAMBLING_KEYWORDS)
     ]
 
+    # Load progress for user (or initialize if missing)
+    progress = users[email].get("progress", {
+        "last_gambling_date": None,
+        "days_clean": 0,
+        "money_saved": 0.0
+    })
+
+    today = datetime.today().date()
+    # Use user-specific estimate, or default to 40
+    # Use saved estimate if exists, or assign random and save it
+    if "daily_spend_estimate" not in users[email]:
+        users[email]["daily_spend_estimate"] = random.randint(30, 100)
+        save_users(users)  # Save updated estimate permanently
+
+    estimate = users[email]["daily_spend_estimate"]
+
+    if gambling_txns:
+        # Update last gambling date and reset streak
+        progress["last_gambling_date"] = today.isoformat()
+        progress["days_clean"] = 0
+        progress["money_saved"] = 0.0
+    else:
+        last_date = progress.get("last_gambling_date")
+        if last_date:
+            days_since = (today - datetime.fromisoformat(last_date).date()).days
+        else:
+            days_since = 1  # First day if no previous gambling
+
+        # Only update if it's a new clean day
+        if days_since > progress["days_clean"]:
+            progress["days_clean"] = days_since
+            progress["money_saved"] = days_since * estimate
+
+    # Save updated progress to users.json
+    users[email]["progress"] = progress
+    save_users(users)
+
     ai_insight = generate_gemini_insight(email, txns, gambling_txns)
 
-    return render_template("transactions.html", transactions=txns, gambling=gambling_txns, email=email, insight=ai_insight)
+    # Gemini Daily Check-in Message
+    today_str = today.isoformat()
+    last_check = progress.get("last_checkin_date")
+
+    if last_check != today_str:
+        daily_checkin = generate_gemini_checkin(email, progress["days_clean"])
+        progress["last_checkin_date"] = today_str
+        save_users(users)
+    else:
+        daily_checkin = None
+
+    return render_template(
+        "transactions.html",
+        daily_spend_estimate=estimate,
+
+        transactions=txns,
+        gambling=gambling_txns,
+        email=email,
+        insight=ai_insight,
+        days_clean=progress["days_clean"],
+        money_saved=progress["money_saved"],
+        daily_checkin=daily_checkin,
+
+    )
 
 
 if __name__ == '__main__':
