@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>QuitBet - Transactions</title>
+</head>
+<body>
+    <h2>🔍 Transactions for {{ email }}</h2>
+
+    <h3>🧠 Gemini Insight</h3>
+    <p>{{ insight }}</p>
+
+    <h3>⚠️ Gambling Transactions</h3>
+    <ul>
+        {% for txn in gambling %}
+            <li><strong>{{ txn.date }} - {{ txn.name }} - ${{ txn.amount }}</strong></li>
+        {% else %}
+            <li>✅ No gambling-related transactions found.</li>
+        {% endfor %}
+    </ul>
+
+    <h3>📋 All Recent Transactions</h3>
+    <ul>
+        {% for txn in transactions %}
+            <li>{{ txn.date }} - {{ txn.name }} - ${{ txn.amount }}</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
