@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 from plaid.model.transactions_get_request import TransactionsGetRequest
 from plaid.model.transactions_get_request_options import TransactionsGetRequestOptions
 from datetime import date
+import random
 
 # Plaid v8 imports
 from plaid.api import plaid_api
@@ -175,6 +176,65 @@ def generate_gemini_insight(email, txns, gambling_txns):
     return response.text
 
 
+def generate_gemini_checkin(email, days_clean):
+    prompt = f"""
+    You're QuitBet, an AI coach helping users quit gambling.
+
+    This user is on day {days_clean} of their clean streak.
+
+    Write a short, friendly, motivational daily check-in message. Be personal, positive, and ask a reflective question.
+
+    Examples:
+    - "It's Day 3 clean, Stanley! What's one thing that helped you resist yesterday?"
+    - "4 days strong — incredible. Want to reflect on your proudest moment this week?"
+
+    Limit to 1–2 sentences.
+    """
+
+    model = genai.GenerativeModel("models/gemini-1.5-pro")
+    response = model.generate_content(prompt)
+    return response.text
+
+
+
+def generate_gemini_question(email, transactions, days_clean):
+    simplified_txns = []
+    for txn in transactions[-5:]:
+        try:
+            date_val = txn["date"]
+            if isinstance(date_val, date):  # If it's a datetime.date object
+                date_val = date_val.isoformat()
+
+            simplified_txns.append({
+                "name": txn["name"],
+                "amount": txn["amount"],
+                "date": date_val
+            })
+        except Exception:
+            simplified_txns.append({
+                "name": getattr(txn, "name", "N/A"),
+                "amount": getattr(txn, "amount", "N/A"),
+                "date": str(getattr(txn, "date", "N/A"))
+            })
+
+    prompt = f"""
+    You're QuitBet, an AI assistant helping people quit gambling.
+
+    You are about to ask the user a **personalized question** based on their recent activity.
+
+    Here are the last few transactions:
+    {json.dumps(simplified_txns, indent=2)}
+
+    They are currently on day {days_clean} of their clean streak.
+
+    Generate one short, meaningful question to help them reflect on their behavior, progress, or emotions. Use a supportive tone.
+    """
+
+    model = genai.GenerativeModel("models/gemini-1.5-pro")
+    response = model.generate_content(prompt)
+    return response.text.strip()
+
+
 @app.route('/transactions/<email>')
 def get_transactions(email):
     access_token = users.get(email, {}).get('access_token')
@@ -184,38 +244,146 @@ def get_transactions(email):
     start_date = date.today() - timedelta(days=30)
     end_date = date.today()
 
-    request = TransactionsGetRequest(
+    txn_request = TransactionsGetRequest(
         access_token=access_token,
         start_date=start_date,
         end_date=end_date,
         options=TransactionsGetRequestOptions(count=20)
     )
 
-    response = plaid_client.transactions_get(request)
+    reflect_state = request.args.get("reflect", "ask")
+
+    response = plaid_client.transactions_get(txn_request)
     txns = response['transactions']
-    if email == "winning@example.com":
-        txns.append({
-            "name": "DraftKings Sportsbook",
-            "amount": 120.00,
-            "date": "2025-04-05"
-        })
-        txns.append({
-            "name": "FanDuel",
-            "amount": 85.50,
-            "date": "2025-04-06"
-        })
+
+    # Add fake gambling transactions for demo/testing purposes
+    fake_gambling_sources = [
+        "DraftKings Sportsbook", "FanDuel", "BetMGM", "Caesars Casino", "PokerStars",
+        "PointsBet", "Barstool Sportsbook", "WSOP Online", "Golden Nugget Casino"
+    ]
+
+    if email.endswith("@example.com"):  # only add for test/demo users
+        for _ in range(10):  # exactly 10 transactions
+            vendor = random.choice(fake_gambling_sources)
+            amount = round(random.uniform(10, 500), 2)
+            days_ago = random.randint(1, 30)
+            txns.append({
+                "name": vendor,
+                "amount": amount,
+                "date": (date.today() - timedelta(days=days_ago)).isoformat(),
+                "winnings": round(random.uniform(-amount, amount), 2)
+            })
 
     gambling_txns = [
         txn for txn in txns
         if any(kw in txn['name'].lower() for kw in GAMBLING_KEYWORDS)
     ]
 
+    # Load progress for user (or initialize if missing)
+    progress = users[email].get("progress", {
+        "last_gambling_date": None,
+        "days_clean": 0,
+        "money_saved": 0.0
+    })
+
+    today = datetime.today().date()
+    # Use user-specific estimate, or default to 40
+    # Use saved estimate if exists, or assign random and save it
+    if "daily_spend_estimate" not in users[email]:
+        users[email]["daily_spend_estimate"] = random.randint(30, 100)
+        save_users(users)  # Save updated estimate permanently
+
+    estimate = users[email]["daily_spend_estimate"]
+
+    if gambling_txns:
+        # Update last gambling date and reset streak
+        progress["last_gambling_date"] = today.isoformat()
+        progress["days_clean"] = 0
+        progress["money_saved"] = 0.0
+    else:
+        last_date = progress.get("last_gambling_date")
+        if last_date:
+            days_since = (today - datetime.fromisoformat(last_date).date()).days
+        else:
+            days_since = 1  # First day if no previous gambling
+
+        # Only update if it's a new clean day
+        if days_since > progress["days_clean"]:
+            progress["days_clean"] = days_since
+            progress["money_saved"] = days_since * estimate
+
+    # Save updated progress to users.json
+    users[email]["progress"] = progress
+    save_users(users)
+
+    # Convert all transaction dates to datetime.date objects
+    for txn in txns:
+        if isinstance(txn['date'], str):
+            txn['date'] = datetime.fromisoformat(txn['date']).date()
+
+    # Sort transactions by date (newest first)
+    txns.sort(key=lambda x: x['date'], reverse=True)
+
+    # Sort gambling transactions by date (newest first)
+    gambling_txns.sort(key=lambda x: x['date'], reverse=True)
+
+    # Save updated progress to users.json
+    users[email]["progress"] = progress
+    save_users(users)
+
     ai_insight = generate_gemini_insight(email, txns, gambling_txns)
 
-    return render_template("transactions.html", transactions=txns, gambling=gambling_txns, email=email,
-                           insight=ai_insight)
+    reflect_state = request.args.get("reflect", "ask")  # "yes", "no", or "ask"
 
+    # Only generate a question if the user agrees
+    if reflect_state == "yes":
+        personal_question = generate_gemini_question(email, txns, progress["days_clean"])
+    else:
+        personal_question = None
+
+    # Gemini Daily Check-in Message
+    today_str = today.isoformat()
+    last_check = progress.get("last_checkin_date")
+
+    if last_check != today_str:
+        daily_checkin = generate_gemini_checkin(email, progress["days_clean"])
+        progress["last_checkin_date"] = today_str
+        save_users(users)
+    else:
+        daily_checkin = None
+
+
+    # Reuse existing filtered gambling_txns list
+    chart_data = [
+        {
+            "date": txn["date"].isoformat() if isinstance(txn["date"], date) else txn["date"],
+            "amount": txn["amount"]
+        }
+        for txn in gambling_txns
+    ]
+
+    return render_template(
+        "transactions.html",
+        daily_spend_estimate=estimate,
+        transactions=txns,
+        gambling=gambling_txns,
+        email=email,
+        insight=ai_insight,
+        days_clean=progress["days_clean"],
+        money_saved=progress["money_saved"],
+        daily_checkin=daily_checkin,
+        personal_question=personal_question,
+        reflect_state=reflect_state,
+        chart_data=json.dumps(chart_data),
+    )
+
+@app.route('/answer_question/<email>', methods=['POST'])
+def answer_question(email):
+    user_response = request.form.get("response")
+    print(f"[{email}] responded: {user_response}")
+    return redirect(url_for('get_transactions', email=email))
 
 if __name__ == '__main__':
     app.run(debug=True)
+
 
