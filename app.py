@@ -34,7 +34,7 @@ GAMBLING_KEYWORDS = ['draftkings', 'fanduel', 'betmgm', 'sportsbook', 'caesars',
 # In-memory "database"
 users = {}
 
-USERS_FILE = "users.json"
+USERS_FILE = "backend/users.json"
 
 # Load users from file
 def load_users():
