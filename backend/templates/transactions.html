@@ -32,19 +32,21 @@
         {% for txn in gambling %}
             <tr><td>{{ txn.date }}</td> <td>{{ txn.name }} </td> <td>- ${{ txn.amount }}</td> <td>{{txn.winnings}} </td> </tr>
         {% else %}
-            <li>✅ No gambling-related transactions found.</li>
+            <tr><td>✅ No gambling-related transactions found.<tr><td>
         {% endfor %}
         </table>
 
     </ul>
 
     <h3>📋 All Recent Transactions</h3>
-    <table>
+    <ul>
+        <table>
       <tr><th>Date</th> <th>Service</th> <th>Amount</th></tr>
-      {% for txn in transactions %}
-        <tr><td>{{ txn.date }}</td> <td>{{ txn.name }}</td> <td>${{ txn.amount }}</td></tr>
-      {% endfor %}
+          {% for txn in transactions %}
+            <tr><td>{{ txn.date }}</td> <td>{{ txn.name }}</td> <td>${{ txn.amount }}</td></tr>
+          {% endfor %}
     </table>
+    </ul>
 
 
 
