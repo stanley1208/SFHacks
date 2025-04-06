@@ -266,10 +266,10 @@ def get_transactions(email):
     ]
 
     if email.endswith("@example.com"):  # only add for test/demo users
-        for _ in range(10):  # exactly 10 transactions
+        for _ in range(30):  # exactly 30 transactions
             vendor = random.choice(fake_gambling_sources)
             amount = round(random.uniform(10, 500), 2)
-            days_ago = random.randint(1, 30)
+            days_ago = random.randint(1, 40)
             txns.append({
                 "name": vendor,
                 "amount": amount,
