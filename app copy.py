@@ -8,6 +8,7 @@ from datetime import date, datetime, timedelta
 from plaid.model.transactions_get_request import TransactionsGetRequest
 from plaid.model.transactions_get_request_options import TransactionsGetRequestOptions
 import random
+import pandas as pd
 
 # Plaid v8 imports
 from plaid.api import plaid_api
@@ -198,8 +199,6 @@ def generate_gemini_checkin(email, days_clean):
     response = model.generate_content(prompt)
     return response.text
 
-
-
 def generate_gemini_question(email, transactions, days_clean):
     simplified_txns = []
     for txn in transactions[-5:]:
@@ -236,6 +235,46 @@ def generate_gemini_question(email, transactions, days_clean):
     model = genai.GenerativeModel("models/gemini-1.5-pro")
     response = model.generate_content(prompt)
     return response.text.strip()
+
+
+# Helper function to group transactions by week
+def get_week_start(date_obj):
+    return date_obj - pd.to_timedelta(date_obj.weekday(), unit='d')
+
+# Load gambling transactions from the stored data
+def generate_weekly_report(gambling_txns):
+    if not gambling_txns:
+        return "No gambling transactions available to analyze."
+
+    # Prepare DataFrame
+    data = []
+    for txn in gambling_txns:
+        txn_date = txn["date"]
+        if isinstance(txn_date, str):
+            txn_date = datetime.fromisoformat(txn_date)
+        data.append({
+            "name": txn["name"],
+            "amount": txn["amount"],
+            "date": txn_date
+        })
+
+    df = pd.DataFrame(data)
+    df["week_start"] = df["date"].apply(get_week_start)
+
+    weekly_summary = df.groupby("week_start")["amount"].agg(["count", "sum", "mean"]).reset_index()
+    weekly_summary.columns = ["Week Starting", "Frequency", "Total Spent", "Average Spend"]
+
+    # Create chart data for the frontend
+    chart_data_weekly = []
+    for _, row in weekly_summary.iterrows():
+        chart_data_weekly.append({
+            "week": row["Week Starting"].strftime("%B %d, %Y"),
+            "total_spent": row["Total Spent"],
+            "average_spend": row["Average Spend"]
+        })
+
+    return chart_data_weekly
+
 
 
 @app.route('/transactions/<email>')
@@ -372,6 +411,9 @@ def get_transactions(email):
         for txn in gambling_txns
     ]
 
+    # Calculate weekly gambling report
+    chart_data_weekly = generate_weekly_report(gambling_txns)
+
     return render_template(
         "transactions.html",
         daily_spend_estimate=avg_daily_spend,
@@ -385,6 +427,7 @@ def get_transactions(email):
         personal_question=personal_question,
         reflect_state=reflect_state,
         chart_data=json.dumps(chart_data),
+        chart_data_weekly=chart_data_weekly,
     )
 
 @app.route('/answer_question/<email>', methods=['POST'])
