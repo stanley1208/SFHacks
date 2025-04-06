@@ -1,2 +1,5 @@
 Flask
-flask-cors
+Flask-Cors
+plaid-python
+google-generativeai
+python-dotenv
