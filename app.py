@@ -4,10 +4,9 @@ from dotenv import load_dotenv
 import os
 import json
 import google.generativeai as genai
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from plaid.model.transactions_get_request import TransactionsGetRequest
 from plaid.model.transactions_get_request_options import TransactionsGetRequestOptions
-from datetime import date
 import random
 
 # Plaid v8 imports
@@ -43,7 +42,6 @@ def load_users():
             return json.load(f)
     return {}
 
-
 # Save users to file
 def save_users(users):
     with open(USERS_FILE, "w") as f:
@@ -68,7 +66,6 @@ plaid_client = plaid_api.PlaidApi(api_client)
 @app.route('/')
 def home():
     return render_template('signup.html')
-
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
@@ -153,41 +150,29 @@ def exchange_token():
     return jsonify({'message': '✅ Bank connected successfully!'})
 
 
-def generate_gemini_insight(email, txns, gambling_txns):
-    if not txns:
-        return "No recent transactions found."
+def generate_gemini_insight(email, txns, gambling_txns, total_spent, net_winnings, net_loss):
+    # Format the gambling transaction summary
+    gambling_summary = "\n".join(
+        f"- {txn['name']} on {txn['date']}: ${txn['amount']:.2f}" for txn in gambling_txns
+    )
 
-    if gambling_txns:
-        prompt = f"""
-        You're QuitBet, an AI trained to help people quit gambling.
+    # Format the net stats clearly
+    financial_summary = (
+        f"\nTotal spent on gambling: ${total_spent:.2f}"
+        f"\nTotal winnings: ${net_winnings:.2f}"
+        f"\nNet loss: ${net_loss:.2f}"
+    )
 
-        User: {email}
-        Here are recent transactions:
-        {txns}
+    # Construct the full prompt
+    prompt = (
+        f"The following are gambling-related transactions for the user {email}:\n\n"
+        f"{gambling_summary if gambling_summary else 'No gambling transactions found.'}\n\n"
+        f"Summary of gambling finances:\n{financial_summary}\n\n"
+        f"Please generate a personalized and empathetic insight for the user. "
+        f"Address their current gambling behavior in a supportive tone, "
+        f"and mention the net loss if relevant. Encourage them to reflect and seek help if needed."
+    )
 
-        These appear to be gambling-related:
-        {gambling_txns}
-
-        Generate a 1–2 sentence helpful reflection or alert, like:
-        “You bet $300 this week, mostly after 10 PM. Let’s talk about setting limits.”
-
-        Be supportive, helpful, and motivational.
-        """
-    else:
-        prompt = f"""
-        You're QuitBet, an AI trained to support people trying to quit gambling.
-
-        User: {email}
-        Here are recent transactions:
-        {txns}
-
-        No gambling activity was detected.
-
-        Generate a short encouraging message like:
-        “Great job staying on track! You’ve made 7 healthy choices this week.”
-
-        Your tone should be warm, motivating, and a little personalized.
-        """
 
     model = genai.GenerativeModel("models/gemini-1.5-pro")  # or "gemini-1.5-flash"
     response = model.generate_content(prompt)
@@ -297,6 +282,15 @@ def get_transactions(email):
         if any(kw in txn['name'].lower() for kw in GAMBLING_KEYWORDS)
     ]
 
+    # Calculate gambling stats
+    total_spent = sum(txn["amount"] for txn in gambling_txns)
+    net_winnings = sum(txn.get("winnings", 0.0) for txn in gambling_txns)
+    net_loss = total_spent - net_winnings
+
+    # Calculate average daily spend based on unique days
+    gambling_dates = {txn["date"] for txn in gambling_txns}
+    avg_daily_spend = round(total_spent / len(gambling_dates), 2) if gambling_dates else 0.0
+
     # Load progress for user (or initialize if missing)
     progress = users[email].get("progress", {
         "last_gambling_date": None,
@@ -305,13 +299,7 @@ def get_transactions(email):
     })
 
     today = datetime.today().date()
-    # Use user-specific estimate, or default to 40
-    # Use saved estimate if exists, or assign random and save it
-    if "daily_spend_estimate" not in users[email]:
-        users[email]["daily_spend_estimate"] = random.randint(30, 100)
-        save_users(users)  # Save updated estimate permanently
-
-    estimate = users[email]["daily_spend_estimate"]
+    # Daily Estimated Spend is the daily average spent on gambling of user.
 
     if gambling_txns:
         # Update last gambling date and reset streak
@@ -328,10 +316,11 @@ def get_transactions(email):
         # Only update if it's a new clean day
         if days_since > progress["days_clean"]:
             progress["days_clean"] = days_since
-            progress["money_saved"] = days_since * estimate
+            progress["money_saved"] = days_since * avg_daily_spend
 
     # Save updated progress to users.json
     users[email]["progress"] = progress
+    users[email]["daily_spend_estimate"] = avg_daily_spend
     save_users(users)
 
     # Convert all transaction dates to datetime.date objects
@@ -345,11 +334,14 @@ def get_transactions(email):
     # Sort gambling transactions by date (newest first)
     gambling_txns.sort(key=lambda x: x['date'], reverse=True)
 
-    # Save updated progress to users.json
-    users[email]["progress"] = progress
-    save_users(users)
-
-    ai_insight = generate_gemini_insight(email, txns, gambling_txns)
+    ai_insight = generate_gemini_insight(
+        email=email,
+        txns=txns,
+        gambling_txns=gambling_txns,
+        total_spent=total_spent,
+        net_winnings=net_winnings,
+        net_loss=net_loss
+    )
 
     reflect_state = request.args.get("reflect", "ask")  # "yes", "no", or "ask"
 
@@ -382,7 +374,7 @@ def get_transactions(email):
 
     return render_template(
         "transactions.html",
-        daily_spend_estimate=estimate,
+        daily_spend_estimate=avg_daily_spend,
         transactions=txns,
         gambling=gambling_txns,
         email=email,
@@ -403,7 +395,7 @@ def answer_question(email):
 
 if __name__ == '__main__':
     import os
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get("PORT", 5001))
     app.run(debug=True, host="0.0.0.0", port=port)
 
 

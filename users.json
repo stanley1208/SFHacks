@@ -13,13 +13,18 @@
   },
   "winning@example.com": {
     "password": "1234",
-    "access_token": "access-sandbox-24096d86-fef7-4857-968d-729482d72514",
-    "daily_spend_estimate": 40,
+    "access_token": "access-sandbox-caabba0b-395f-4d6c-918e-97af909ad122",
+    "daily_spend_estimate": 293.84,
     "progress": {
-      "last_gambling_date": "2025-04-05",
+      "last_gambling_date": "2025-04-06",
       "days_clean": 0,
       "money_saved": 0.0,
-      "last_checkin_date": "2025-04-05"
+      "last_checkin_date": "2025-04-06"
+    },
+    "weekly_checkin": {
+      "actual_spent": 2332.0,
+      "goal_to_save": 23424.0,
+      "limit": 500
     }
   }
 }
