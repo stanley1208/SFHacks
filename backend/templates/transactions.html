@@ -28,9 +28,9 @@
     <h3>⚠️ Gambling Transactions</h3>
     <ul>
         <table>
-        <tr><th>Date</th> <th>Service</th> <th>Amount bet</th> <th>Gain/Loss</th></tr>
+        <tr><th>Date</th> <th>Service</th> <th>Amount bet</th> </tr>
         {% for txn in gambling %}
-            <tr><td>{{ txn.date }}</td> <td>{{ txn.name }} </td> <td>- ${{ txn.amount }}</td> <td>{{txn.winnings}} </td> </tr>
+            <tr><td>{{ txn.date }}</td> <td>{{ txn.name }} </td> <td>- ${{ txn.amount }}</td> </tr>
         {% else %}
             <tr><td>✅ No gambling-related transactions found.<tr><td>
         {% endfor %}
