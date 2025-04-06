@@ -191,6 +191,44 @@ def generate_gemini_checkin(email, days_clean):
     response = model.generate_content(prompt)
     return response.text
 
+def generate_gemini_question(email, transactions, days_clean):
+    simplified_txns = []
+    for txn in transactions[-5:]:
+        try:
+            date_val = txn["date"]
+            if isinstance(date_val, date):  # If it's a datetime.date object
+                date_val = date_val.isoformat()
+
+            simplified_txns.append({
+                "name": txn["name"],
+                "amount": txn["amount"],
+                "date": date_val
+            })
+        except Exception:
+            simplified_txns.append({
+                "name": getattr(txn, "name", "N/A"),
+                "amount": getattr(txn, "amount", "N/A"),
+                "date": str(getattr(txn, "date", "N/A"))
+            })
+
+    prompt = f"""
+    You're QuitBet, an AI assistant helping people quit gambling.
+    
+    You are about to ask the user a **personalized question** based on their recent activity.
+    
+    Here are the last few transactions:
+    {json.dumps(simplified_txns, indent=2)}
+    
+    They are currently on day {days_clean} of their clean streak.
+    
+    Generate one short, meaningful question to help them reflect on their behavior, progress, or emotions. Use a supportive tone.
+    """
+
+    model = genai.GenerativeModel("models/gemini-1.5-pro")
+    response = model.generate_content(prompt)
+    return response.text.strip()
+
+
 
 
 @app.route('/transactions/<email>')
@@ -202,14 +240,15 @@ def get_transactions(email):
     start_date = date.today() - timedelta(days=30)
     end_date = date.today()
 
-    request = TransactionsGetRequest(
+    plaid_request = TransactionsGetRequest(
         access_token=access_token,
         start_date=start_date,
         end_date=end_date,
         options=TransactionsGetRequestOptions(count=20)
     )
 
-    response = plaid_client.transactions_get(request)
+    response = plaid_client.transactions_get(plaid_request)
+
     txns = response['transactions']
     # if email == "winning@example.com":
     txns.append({
@@ -269,6 +308,14 @@ def get_transactions(email):
 
     ai_insight = generate_gemini_insight(email, txns, gambling_txns)
 
+    reflect_state = request.args.get("reflect", "ask")  # "yes", "no", or "ask"
+
+    # Only generate a question if the user agrees
+    if reflect_state == "yes":
+        personal_question = generate_gemini_question(email, txns, progress["days_clean"])
+    else:
+        personal_question = None
+
     # Gemini Daily Check-in Message
     today_str = today.isoformat()
     last_check = progress.get("last_checkin_date")
@@ -283,7 +330,6 @@ def get_transactions(email):
     return render_template(
         "transactions.html",
         daily_spend_estimate=estimate,
-
         transactions=txns,
         gambling=gambling_txns,
         email=email,
@@ -291,8 +337,17 @@ def get_transactions(email):
         days_clean=progress["days_clean"],
         money_saved=progress["money_saved"],
         daily_checkin=daily_checkin,
+        personal_question=personal_question,
+        reflect_state=reflect_state
 
     )
+
+@app.route('/answer_question/<email>', methods=['POST'])
+def answer_question(email):
+    user_response = request.form.get("response")
+    print(f"[{email}] responded: {user_response}")
+    return redirect(url_for('get_transactions', email=email))
+
 
 
 if __name__ == '__main__':

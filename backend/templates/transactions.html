@@ -28,7 +28,7 @@
     <h3>⚠️ Gambling Transactions</h3>
     <ul>
         <table>
-        <tr><th>Date</th> <th>Service</th> <th>amount bet</th> <th>gain/loss</th></tr>
+        <tr><th>Date</th> <th>Service</th> <th>Amount bet</th> <th>Gain/Loss</th></tr>
         {% for txn in gambling %}
             <tr><td>{{ txn.date }}</td> <td>{{ txn.name }} </td> <td>- ${{ txn.amount }}</td> <td>{{txn.winnings}} </td> </tr>
         {% else %}
@@ -39,12 +39,13 @@
     </ul>
 
     <h3>📋 All Recent Transactions</h3>
-    <ul>
-        <tr><th>Service</th> <th>amount bet</th> <th>gain/loss</th></tr>
-        {% for txn in transactions %}
-            <li>{{ txn.date }} - {{ txn.name }} - ${{ txn.amount }}</li>
-        {% endfor %}
-    </ul>
+    <table>
+      <tr><th>Date</th> <th>Service</th> <th>Amount</th></tr>
+      {% for txn in transactions %}
+        <tr><td>{{ txn.date }}</td> <td>{{ txn.name }}</td> <td>${{ txn.amount }}</td></tr>
+      {% endfor %}
+    </table>
+
 
 
     <h3>📈 Your Progress</h3>
@@ -58,6 +59,26 @@
       <h3>📬 Daily Check-in</h3>
       <p>{{ daily_checkin }}</p>
     {% endif %}
+
+
+    {% if reflect_state == "ask" %}
+      <h3>🧠 Gemini Check-in</h3>
+      <p>Would you like to reflect on your progress today?</p>
+      <a href="?reflect=yes"><button>Yes, let’s do it</button></a>
+      <a href="?reflect=no"><button>No thanks</button></a>
+    {% elif reflect_state == "yes" and personal_question %}
+      <h3>🧠 Gemini’s Personalized Question for You</h3>
+      <p>{{ personal_question }}</p>
+      <form method="POST" action="/answer_question/{{ email }}">
+        <label for="response">Your Reflection:</label><br>
+        <textarea name="response" rows="4" cols="50" required></textarea><br>
+        <button type="submit">Submit</button>
+      </form>
+    {% elif reflect_state == "no" %}
+      <p>✅ No problem! Come back anytime you’d like to reflect.</p>
+    {% endif %}
+
+
 
     <p>
       <a href="/login" style="padding: 8px 16px; background: #4285F4; color: white; text-decoration: none; border-radius: 8px;">
