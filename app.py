@@ -100,6 +100,24 @@ def login():
 
     return render_template('login.html')
 
+@app.route('/survey/<email>', methods=['GET', 'POST'])
+def show_survey(email):
+    if request.method == 'POST':
+        actual = float(request.form["actual"])
+        goal = float(request.form["goal"])
+
+        # Save in users
+        users[email]["weekly_checkin"] = {
+            "actual_spent": actual,
+            "goal_to_save": goal,
+            "limit": 500  # fixed cap
+        }
+        save_users(users)
+
+        return redirect(url_for('get_transactions', email=email))
+
+    return render_template("survey.html", email=email)
+
 
 @app.route('/connect_bank/<email>')
 def connect_bank(email):
