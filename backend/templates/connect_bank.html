@@ -1,63 +1,40 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Connect Your Bank</title>
-    <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
+  <title>Connect Your Bank</title>
+  <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
 </head>
 <body>
-    <h2>🔗 Connect Your Bank</h2>
-    <button id="link-button">Connect Bank</button>
-    <script>
-  const linkToken = "{{ link_token }}";
-  const email = "{{ email }}";
+  <h2>🔗 Connect Your Bank</h2>
+  <p>Please link your account so we can monitor transactions and help you quit gambling.</p>
+  <button id="link-button">Connect Bank</button>
 
-  const handler = Plaid.create({
-    token: linkToken,
-    onSuccess: function(public_token, metadata) {
-      fetch('/exchange_token', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ public_token, email })
-      })
-      .then(res => res.json())
-      .then(data => {
-        alert(data.message);
-        // ✅ Redirect to the transactions page
-        window.location.href = `/transactions/${email}`;
-      });
-    }
-  });
+  <script>
+    const linkToken = "{{ link_token }}";
+    const email = "{{ email }}";
 
-  function openLink() {
-    handler.open();
-  }
-</script>
-
-    <script>
-        const linkHandler = Plaid.create({
-            token: "{{ link_token }}",
-            onSuccess: function(public_token, metadata) {
-                // Send to backend for access_token exchange
-                fetch('/exchange_token', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ public_token: public_token, email: "{{ email }}" })
-                })
-                .then(res => res.json())
-                .then(data => {alert(data.message);
-                window.location.href = `/transactions/${email}`;
-            });
-
-            },
+    const handler = Plaid.create({
+      token: linkToken,
+      onSuccess: function(public_token, metadata) {
+        fetch('/exchange_token', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ public_token, email })
+        })
+        .then(res => res.json())
+        .then(data => {
+          alert(data.message);
+          // ✅ Redirect to the survey after connection
+          window.location.href = `/survey/${email}`;
         });
+      }
+    });
 
-        document.getElementById('link-button').onclick = function() {
-            linkHandler.open();
-        };
-    </script>
+    document.getElementById('link-button').onclick = function() {
+      handler.open();
+    };
+  </script>
 </body>
 </html>

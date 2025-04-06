@@ -1,0 +1,10 @@
+<h2>🎯 Weekly Spending Check-In</h2>
+<form method="POST" action="/survey/{{ email }}">
+  <label for="actual">How much did you spend last week (in USD)?</label><br>
+  <input type="number" name="actual" required><br><br>
+
+  <label for="goal">What’s your savings goal for this week (in USD)?</label><br>
+  <input type="number" name="goal" required><br><br>
+
+  <input type="submit" value="Submit">
+</form>

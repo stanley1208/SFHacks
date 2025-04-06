@@ -93,9 +93,28 @@ def login():
         if not user or user['password'] != password:
             return "Invalid credentials", 401
 
-        return redirect(url_for('connect_bank', email=email))
+        return redirect(url_for("connect_bank", email=email))
 
     return render_template('login.html')
+
+@app.route('/survey/<email>', methods=['GET', 'POST'])
+def show_survey(email):
+    if request.method == 'POST':
+        actual = float(request.form["actual"])
+        goal = float(request.form["goal"])
+
+        # Save in users
+        users[email]["weekly_checkin"] = {
+            "actual_spent": actual,
+            "goal_to_save": goal,
+            "limit": 500  # fixed cap
+        }
+        save_users(users)
+
+        return redirect(url_for('get_transactions', email=email))
+
+    return render_template("survey.html", email=email)
+
 
 @app.route('/connect_bank/<email>')
 def connect_bank(email):
@@ -110,7 +129,8 @@ def connect_bank(email):
     )
     response = plaid_client.link_token_create(request_data)
     link_token = response.link_token
-    return render_template('connect_bank.html', link_token=link_token, email=email)
+    return render_template("connect_bank.html", link_token=link_token, email=email)
+
 
 @app.route('/exchange_token', methods=['POST'])
 def exchange_token():
@@ -134,35 +154,55 @@ def generate_gemini_insight(email, txns, gambling_txns):
     if not txns:
         return "No recent transactions found."
 
+    checkin = users.get(email, {}).get("weekly_checkin", {})
+
+    if checkin:
+        actual = checkin.get("actual_spent")
+        goal = checkin.get("goal_to_save")
+        limit = checkin.get("limit", 500)
+
+        checkin_context = f"""
+        - The user reported spending ${actual:.2f} last week.
+        - Their goal is to save ${goal:.2f} this week.
+        - Their weekly budget is capped at ${limit}.
+        """
+    else:
+        checkin_context = ""
+
     if gambling_txns:
         prompt = f"""
         You're QuitBet, an AI trained to help people quit gambling.
-        
+
         User: {email}
+        {checkin_context}
+
         Here are recent transactions:
         {txns}
-        
+
         These appear to be gambling-related:
         {gambling_txns}
-        
+
         Generate a 1–2 sentence helpful reflection or alert, like:
         “You bet $300 this week, mostly after 10 PM. Let’s talk about setting limits.”
-        
+
         Be supportive, helpful, and motivational.
         """
+
     else:
         prompt = f"""
         You're QuitBet, an AI trained to support people trying to quit gambling.
-        
+
         User: {email}
+        {checkin_context}
+
         Here are recent transactions:
         {txns}
-        
+
         No gambling activity was detected.
-        
+
         Generate a short encouraging message like:
         “Great job staying on track! You’ve made 7 healthy choices this week.”
-        
+
         Your tone should be warm, motivating, and a little personalized.
         """
 

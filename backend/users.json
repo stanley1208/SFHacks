@@ -1,14 +1,19 @@
 {
   "wmei@scu.edu": {
     "password": "Stanley1208@",
-    "access_token": "access-sandbox-562c3ad8-7e0b-44c3-937d-dca5cff88f6f",
+    "access_token": "access-sandbox-c5f6ab50-7e5b-464e-a096-58676018674e",
     "progress": {
       "last_gambling_date": "2025-04-05",
       "days_clean": 0,
       "money_saved": 0.0,
       "last_checkin_date": "2025-04-05"
     },
-    "daily_spend_estimate": 72
+    "daily_spend_estimate": 72,
+    "weekly_checkin": {
+      "actual_spent": 700.0,
+      "goal_to_save": 150.0,
+      "limit": 500
+    }
   },
   "stanley.mei08@gmail.com": {
     "password": "Stanley1208@",
@@ -23,7 +28,7 @@
   },
   "stanley.mei08@yahoo.com.tw": {
     "password": "Stanley1208@",
-    "access_token": "access-sandbox-a430f2c1-20db-4c7e-a5ff-0945c379aeaf",
+    "access_token": "access-sandbox-1ad7d129-21e9-4b4d-9d6b-98048fe98fdc",
     "daily_spend_estimate": 37,
     "progress": {
       "last_gambling_date": "2025-04-05",
@@ -45,13 +50,18 @@
   },
   "StanleyNoAim@gmail.com": {
     "password": "Stanley1208@",
-    "access_token": "access-sandbox-fdb1cfba-8f74-4b60-bdfb-a7fb529a3634",
+    "access_token": "access-sandbox-eaf8b46a-50df-43de-93f5-07bbcdc6b4fd",
     "progress": {
       "last_gambling_date": "2025-04-05",
       "days_clean": 0,
       "money_saved": 0.0,
       "last_checkin_date": "2025-04-05"
     },
-    "daily_spend_estimate": 55
+    "daily_spend_estimate": 55,
+    "weekly_checkin": {
+      "actual_spent": 700.0,
+      "goal_to_save": 450.0,
+      "limit": 500
+    }
   }
 }
