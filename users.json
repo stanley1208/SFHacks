@@ -1,0 +1,30 @@
+{
+  "wmei@scu.edu": {
+    "password": "Stanley1208@",
+    "access_token": "access-sandbox-962ef5e5-ffb7-40b0-8930-bcd2bd920f25"
+  },
+  "mh@gmail.com": {
+    "password": "choi3110",
+    "access_token": "access-sandbox-2f9bac0a-68dc-4bae-8515-3cbd4de158f9"
+  },
+  "choi@gmail.com": {
+    "password": "choi",
+    "access_token": "access-sandbox-d8c8ea8f-a448-4834-af3c-1aeb02ebef51"
+  },
+  "winning@example.com": {
+    "password": "1234",
+    "access_token": "access-sandbox-ed8cc658-0c13-40dc-8fd0-ca91d98a104d",
+    "daily_spend_estimate": 40,
+    "progress": {
+      "last_gambling_date": "2025-04-05",
+      "days_clean": 0,
+      "money_saved": 0.0,
+      "last_checkin_date": "2025-04-05"
+    },
+    "weekly_checkin": {
+      "actual_spent": 2000.0,
+      "goal_to_save": 2000.0,
+      "limit": 500
+    }
+  }
+}

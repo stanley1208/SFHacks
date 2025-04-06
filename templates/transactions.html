@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>QuitBet - Transactions</title>
+    <style>
+    table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-bottom: 20px;
+  }
+  th, td {
+    border: 1px solid #888;
+    padding: 8px;
+    text-align: left;
+  }
+  th {
+    background-color: #f2f2f2;
+  }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(to right, #f3e5f5, #ede7f6);
+            margin: 0;
+            padding: 2rem;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background-color: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+        }
+
+        h2 {
+            text-align: center;
+            color: #7e57c2;
+            margin-bottom: 2rem;
+        }
+
+        h3 {
+            margin-top: 2rem;
+            color: #6a42b2;
+            border-bottom: 2px solid #e1bee7;
+            padding-bottom: 0.3rem;
+        }
+
+        p {
+            font-size: 1rem;
+            background-color: #f3e5f5;
+            padding: 1rem;
+            border-radius: 10px;
+            margin-top: 0.5rem;
+        }
+
+        ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        li {
+            background-color: #f9f6fc;
+            margin: 0.5rem 0;
+            padding: 0.8rem 1rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        li strong {
+            color: #c2185b;
+        }
+
+        .no-transactions {
+            color: #4caf50;
+            font-weight: bold;
+        }
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<head>
+    <title>QuitBet - Transactions</title>
+</head>
+<body>
+    <h2>🔍 Transactions for {{ email }}</h2>
+
+    <h3>🧠 Gemini Insight</h3>
+    <p>{{ insight }}</p>
+
+    <h3>⚠️ Gambling Transactions</h3>
+    <ul>
+        <table>
+        <tr><th>Date</th> <th>Service</th> <th>Amount bet</th> </tr>
+        {% for txn in gambling %}
+            <tr><td>{{ txn.date }}</td> <td>{{ txn.name }} </td> <td>- ${{ txn.amount }}</td> </tr>
+        {% else %}
+            <tr><td>✅ No gambling-related transactions found.<tr><td>
+        {% endfor %}
+        </table>
+
+    </ul>
+
+    <h3>📋 All Recent Transactions</h3>
+    <table>
+      <tr><th>Date</th> <th>Service</th> <th>Amount</th></tr>
+      {% for txn in transactions %}
+        <tr><td>{{ txn.date }}</td> <td>{{ txn.name }}</td> <td>${{ txn.amount }}</td></tr>
+      {% endfor %}
+    </table>
+
+    <h3>🎰 Gambling Spend Over Time</h3>
+<div style="max-width: 800px;">
+  <canvas id="gamblingChart" height="150"></canvas>
+</div>
+
+<script>
+  const rawData = {{ chart_data | safe }};
+  const labels = rawData.map(t => t.date);
+  const data = rawData.map(t => t.amount);
+
+  const ctx = document.getElementById('gamblingChart').getContext('2d');
+
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels.reverse(),
+      datasets: [{
+        label: 'Gambling Amount ($)',
+        data: data.reverse(),
+        borderColor: 'rgba(255, 99, 132, 0.8)',
+        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+        fill: true,
+        tension: 0.3,
+        pointRadius: 3
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        x: {
+          title: { display: true, text: 'Date' }
+        },
+        y: {
+          title: { display: true, text: 'Amount ($)' },
+          beginAtZero: true
+        }
+      }
+    }
+  });
+</script>
+
+    <h3>📈 Your Progress</h3>
+    <ul>
+      <li>🔥 Days clean: {{ days_clean }}</li>
+      <li>🧮 Daily Estimated Spend: ${{ daily_spend_estimate }}</li>
+
+    </ul>
+
+    {% if daily_checkin %}
+      <h3>📬 Daily Check-in</h3>
+      <p>{{ daily_checkin }}</p>
+    {% endif %}
+
+    {% if reflect_state == "ask" %}
+      <h3>🧠 Gemini Check-in</h3>
+      <p>Would you like to reflect on your progress today?</p>
+      <a href="?reflect=yes"><button>Yes, let’s do it</button></a>
+      <a href="?reflect=no"><button>No thanks</button></a>
+    {% elif reflect_state == "yes" and personal_question %}
+      <h3>🧠 Gemini’s Personalized Question for You</h3>
+      <p>{{ personal_question }}</p>
+      <form method="POST" action="/answer_question/{{ email }}">
+        <label for="response">Your Reflection:</label><br>
+        <textarea name="response" rows="4" cols="50" required></textarea><br>
+        <button type="submit">Submit</button>
+      </form>
+    {% elif reflect_state == "no" %}
+      <p>✅ No problem! Come back anytime you’d like to reflect.</p>
+    {% endif %}
+
+    <p>
+      <a href="/login" style="padding: 8px 16px; background: #4285F4; color: white; text-decoration: none; border-radius: 8px;">
+        🔙 Back to Main Page
+      </a>
+    </p>
+</body>
+</html>
